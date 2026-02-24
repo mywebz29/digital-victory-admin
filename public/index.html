@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Victory — Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ─── Login Screen ────────────────────────────────────────── -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <h1>⚡ Digital Victory</h1>
+            <p>Admin Panel — Sign in to manage users and licenses</p>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginUsername" value="admin" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password">
+            </div>
+            <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+            <div id="loginError" class="error-msg hidden"></div>
+        </div>
+    </div>
+
+    <!-- ─── Dashboard (hidden initially) ────────────────────────── -->
+    <div id="dashboardScreen" class="app hidden">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-brand">
+                <h2>⚡ Digital Victory</h2>
+                <small>Admin Panel</small>
+            </div>
+            <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+                <span class="icon">📊</span> Dashboard
+            </div>
+            <div class="nav-item" data-page="users" onclick="showPage('users')">
+                <span class="icon">👥</span> Users
+            </div>
+            <div class="nav-item" data-page="keys" onclick="showPage('keys')">
+                <span class="icon">🔑</span> Activation Keys
+            </div>
+            <div class="nav-item" data-page="licenses" onclick="showPage('licenses')">
+                <span class="icon">📄</span> Licenses
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-outline btn-sm" onclick="doLogout()" style="width:100%">
+                    🚪 Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- ─── Dashboard Page ──────────────────────────── -->
+            <div id="page-dashboard">
+                <div class="page-header">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <div class="subtitle">Overview of your Digital Victory platform</div>
+                    </div>
+                </div>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Activations</h3>
+                    </div>
+                    <div class="card-body">
+                        <table>
+                            <thead>
+                                <tr><th>User</th><th>Plan</th><th>Expiry</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="recentTable">
+                                <tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Users Page ──────────────────────────────── -->
+            <div id="page-users" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1>Users</h1>
+                        <div class="subtitle">Manage registered app users</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table>
+                            <thead>
+                                <tr><th>ID</th><th>Username</th><th>Device ID</th><th>Plan</th><th>Status</th><th>Registered</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr><td colspan="7" class="text-center text-muted">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Keys Page ───────────────────────────────── -->
+            <div id="page-keys" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1>Activation Keys</h1>
+                        <div class="subtitle">Generate and manage activation keys</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="inline-form">
+                        <div class="form-group">
+                            <label>Count</label>
+                            <input type="number" id="keyCount" value="1" min="1" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label>Plan</label>
+                            <select id="keyPlan">
+                                <option value="Basic">Basic (30 days)</option>
+                                <option value="Pro">Pro (90 days)</option>
+                                <option value="Premium">Premium (365 days)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (days)</label>
+                            <input type="number" id="keyDuration" value="30" min="1">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="generateKeys()">🔑 Generate</button>
+                    </div>
+                    <div class="card-body">
+                        <table>
+                            <thead>
+                                <tr><th>Key</th><th>Plan</th><th>Duration</th><th>Status</th><th>Used By</th><th>Created</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody id="keysTable">
+                                <tr><td colspan="7" class="text-center text-muted">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Licenses Page ───────────────────────────── -->
+            <div id="page-licenses" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1>Licenses</h1>
+                        <div class="subtitle">View and manage active licenses</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table>
+                            <thead>
+                                <tr><th>User</th><th>Plan</th><th>Token</th><th>Expiry</th><th>Payment</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="licensesTable">
+                                <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
