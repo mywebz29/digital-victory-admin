@@ -122,10 +122,15 @@ const queries = {
     },
     getKeyByValue: { get: (key_value) => { const d = loadData(); return d.activation_keys.find(k => k.key_value === key_value) || null; } },
     createKey: {
-        run: (key_value, plan_name, duration_days) => {
+        run: (key_value, plan_name, duration_days, assigned_username, assigned_mobile) => {
             const d = loadData();
             const id = nextId(d, 'activation_keys');
-            d.activation_keys.push({ id, key_value, user_id: null, plan_name, duration_days, is_used: 0, is_revoked: 0, created_at: new Date().toISOString(), used_at: null });
+            d.activation_keys.push({
+                id, key_value, user_id: null, plan_name, duration_days,
+                assigned_username: assigned_username || '',
+                assigned_mobile: assigned_mobile || '',
+                is_used: 0, is_revoked: 0, created_at: new Date().toISOString(), used_at: null
+            });
             saveData(d);
             return { lastInsertRowid: id };
         }

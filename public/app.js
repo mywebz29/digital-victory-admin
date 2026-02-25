@@ -233,6 +233,10 @@ async function loadKeys() {
                         <td><span class="key-value">${esc(k.key_value)}</span></td>
                         <td>${esc(k.plan_name)}</td>
                         <td>${k.duration_days} days</td>
+                        <td>
+                            ${k.assigned_username ? esc(k.assigned_username) : '<span class="text-muted">—</span>'}<br>
+                            ${k.assigned_mobile ? `<small class="text-muted">${esc(k.assigned_mobile)}</small>` : ''}
+                        </td>
                         <td><span class="badge ${badge}">${status}</span></td>
                         <td>${k.used_by_username ? esc(k.used_by_username) : '<span class="text-muted">—</span>'}</td>
                         <td>${formatDate(k.created_at)}</td>
@@ -254,10 +258,14 @@ async function generateKeys() {
     const count = parseInt(document.getElementById('keyCount').value) || 1;
     const plan_name = document.getElementById('keyPlan').value;
     const duration_days = parseInt(document.getElementById('keyDuration').value) || 30;
+    const username = document.getElementById('keyUsername').value.trim();
+    const mobile = document.getElementById('keyMobile').value.trim();
 
-    const res = await api('/api/keys/generate', 'POST', { count, plan_name, duration_days });
+    const res = await api('/api/keys/generate', 'POST', { count, plan_name, duration_days, username, mobile });
     if (res.success) {
         toast(`Generated ${res.keys.length} key(s)`, 'success');
+        document.getElementById('keyUsername').value = '';
+        document.getElementById('keyMobile').value = '';
         loadKeys();
     } else {
         toast(res.message, 'error');

@@ -29,12 +29,12 @@ router.get('/', (req, res) => {
 // ─── POST /api/keys/generate — Generate new keys ────────────────
 router.post('/generate', (req, res) => {
     try {
-        const { count = 1, plan_name = 'Basic', duration_days = 30 } = req.body;
+        const { count = 1, plan_name = 'Basic', duration_days = 30, username = '', mobile = '' } = req.body;
         const generated = [];
 
         for (let i = 0; i < Math.min(count, 50); i++) {
             const keyValue = generateKey();
-            queries.createKey.run(keyValue, plan_name, duration_days);
+            queries.createKey.run(keyValue, plan_name, duration_days, username, mobile);
             generated.push(keyValue);
         }
 
