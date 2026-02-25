@@ -70,13 +70,26 @@ const queries = {
     getUserById: { get: (id) => { const d = loadData(); return d.users.find(u => u.id === id) || null; } },
     getUserByUsername: { get: (username) => { const d = loadData(); return d.users.find(u => u.username === username) || null; } },
     createUser: {
-        run: (username, password_hash, email, device_id) => {
+        run: (username, password_hash, email, device_id, name, mobile) => {
             const d = loadData();
             const id = nextId(d, 'users');
-            const user = { id, username, password_hash, email, device_id, is_active: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+            const user = { id, username, password_hash, email, device_id, name: name || '', mobile: mobile || '', is_active: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
             d.users.push(user);
             saveData(d);
             return { lastInsertRowid: id };
+        }
+    },
+    updateUser: {
+        run: (id, updates) => {
+            const d = loadData();
+            const user = d.users.find(u => u.id === id);
+            if (user) {
+                if (updates.name !== undefined) user.name = updates.name;
+                if (updates.mobile !== undefined) user.mobile = updates.mobile;
+                if (updates.email !== undefined) user.email = updates.email;
+                user.updated_at = new Date().toISOString();
+                saveData(d);
+            }
         }
     },
     updateUserStatus: {

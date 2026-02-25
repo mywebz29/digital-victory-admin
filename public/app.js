@@ -136,30 +136,58 @@ async function loadUsers() {
 
         const tbody = document.getElementById('usersTable');
         if (res.users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No users registered yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No users registered yet</td></tr>';
         } else {
-            tbody.innerHTML = res.users.map(u => `
-                <tr>
-                    <td>${u.id}</td>
-                    <td><strong>${esc(u.username)}</strong></td>
-                    <td><span class="text-muted">${esc(u.device_id || '—')}</span></td>
-                    <td>${u.license ? `<span class="badge badge-info">${esc(u.license.plan_name)}</span>` : '<span class="text-muted">—</span>'}</td>
-                    <td>${u.is_active
-                    ? '<span class="badge badge-success">Active</span>'
-                    : '<span class="badge badge-danger">Inactive</span>'}</td>
-                    <td>${formatDate(u.created_at)}</td>
-                    <td class="gap-2">
-                        <button class="btn btn-sm ${u.is_active ? 'btn-warning' : 'btn-success'}"
-                                onclick="toggleUser(${u.id}, ${!u.is_active})">
-                            ${u.is_active ? '⏸ Disable' : '▶ Enable'}
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">🗑</button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = res.users.map(u => {
+                const expiryDate = u.license ? formatDate(u.license.expiry_date) : '—';
+                const isExpired = u.license ? new Date(u.license.expiry_date) < new Date() : false;
+                return `
+                    <tr id="user-row-${u.id}">
+                        <td>${u.id}</td>
+                        <td><strong>${esc(u.username)}</strong></td>
+                        <td id="name-${u.id}">${esc(u.name || '—')}</td>
+                        <td id="mobile-${u.id}">${esc(u.mobile || '—')}</td>
+                        <td><span class="text-muted">${esc(u.device_id || '—')}</span></td>
+                        <td>${u.license ? `<span class="badge badge-info">${esc(u.license.plan_name)}</span>` : '<span class="text-muted">—</span>'}</td>
+                        <td>${isExpired
+                        ? `<span class="badge badge-danger">${expiryDate}</span>`
+                        : `<span class="badge badge-success">${expiryDate}</span>`}</td>
+                        <td>${u.is_active
+                        ? '<span class="badge badge-success">Active</span>'
+                        : '<span class="badge badge-danger">Inactive</span>'}</td>
+                        <td>${formatDate(u.created_at)}</td>
+                        <td class="gap-2">
+                            <button class="btn btn-sm btn-info" onclick="editUser(${u.id}, '${esc(u.name || '')}', '${esc(u.mobile || '')}')">✏️</button>
+                            <button class="btn btn-sm ${u.is_active ? 'btn-warning' : 'btn-success'}"
+                                    onclick="toggleUser(${u.id}, ${!u.is_active})">
+                                ${u.is_active ? '⏸' : '▶'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">🗑</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
     } catch (err) {
         toast('Failed to load users', 'error');
+    }
+}
+
+function editUser(id, currentName, currentMobile) {
+    document.getElementById(`name-${id}`).innerHTML = `<input type="text" id="edit-name-${id}" value="${currentName}" placeholder="Name" style="width:100px">`;
+    document.getElementById(`mobile-${id}`).innerHTML = `<input type="text" id="edit-mobile-${id}" value="${currentMobile}" placeholder="Mobile" style="width:110px">
+        <button class="btn btn-sm btn-success" onclick="saveUser(${id})" style="margin-left:4px">💾</button>`;
+}
+
+async function saveUser(id) {
+    const name = document.getElementById(`edit-name-${id}`).value;
+    const mobile = document.getElementById(`edit-mobile-${id}`).value;
+    const res = await api(`/api/users/${id}`, 'PUT', { name, mobile });
+    if (res.success) {
+        toast('User updated', 'success');
+        loadUsers();
+    } else {
+        toast(res.message, 'error');
     }
 }
 

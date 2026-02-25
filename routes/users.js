@@ -45,8 +45,19 @@ router.get('/:id', (req, res) => {
 router.put('/:id/status', (req, res) => {
     try {
         const { is_active } = req.body;
-        queries.updateUserStatus.run(is_active ? 1 : 0, req.params.id);
+        queries.updateUserStatus.run(is_active ? 1 : 0, parseInt(req.params.id));
         res.json({ success: true, message: `User ${is_active ? 'activated' : 'deactivated'}` });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ─── PUT /api/users/:id — Edit user name, mobile, email ────────
+router.put('/:id', (req, res) => {
+    try {
+        const { name, mobile, email } = req.body;
+        queries.updateUser.run(parseInt(req.params.id), { name, mobile, email });
+        res.json({ success: true, message: 'User updated' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
