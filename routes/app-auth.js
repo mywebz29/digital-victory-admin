@@ -45,9 +45,16 @@ router.post('/login', (req, res) => {
                 return res.json({ success: false, message: 'Activation key has been revoked' });
             }
 
-            // Create new user
+            // Create new user using the assigned name and mobile from the key
             const passwordHash = bcrypt.hashSync(password, 10);
-            const result = queries.createUser.run(username, passwordHash, '', deviceId || '', '', '');
+            const result = queries.createUser.run(
+                username,
+                passwordHash,
+                '',
+                deviceId || '',
+                key.assigned_username || '',
+                key.assigned_mobile || ''
+            );
             const userId = result.lastInsertRowid;
 
             // Mark key as used
