@@ -66,4 +66,24 @@ router.get('/dashboard', (req, res) => {
     }
 });
 
+// ─── POST /api/admin/restore — Restore local cache to server ────
+router.post('/restore', (req, res) => {
+    try {
+        const { users, keys, licenses } = req.body;
+
+        if (!users && !keys && !licenses) {
+            return res.status(400).json({ success: false, message: 'No data provided to restore.' });
+        }
+
+        queries.restoreData.run(users, keys, licenses);
+
+        res.json({
+            success: true,
+            message: 'Database successfully restored from cache.'
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;

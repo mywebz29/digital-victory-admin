@@ -28,6 +28,17 @@ router.post('/login', (req, res) => {
             if (!user.is_active) {
                 return res.json({ success: false, message: 'Account deactivated. Contact support.' });
             }
+
+            // Verify or bind device ID
+            if (deviceId) {
+                if (!user.device_id) {
+                    // Bind device ID if none exists
+                    queries.updateUserDeviceId.run(user.id, deviceId);
+                    user.device_id = deviceId;
+                } else if (user.device_id !== deviceId) {
+                    return res.json({ success: false, message: 'Device ID mismatch. License is bound to another device.' });
+                }
+            }
         } else {
             // New user — register with activation key
             if (!activationKey) {
@@ -170,6 +181,17 @@ router.post('/renew', (req, res) => {
         }
         if (!user.is_active) {
             return res.json({ success: false, message: 'Account deactivated. Contact support.' });
+        }
+
+        const deviceId = req.body.deviceId;
+        if (deviceId) {
+            if (!user.device_id) {
+                // Bind device ID if none exists
+                queries.updateUserDeviceId.run(user.id, deviceId);
+                user.device_id = deviceId;
+            } else if (user.device_id !== deviceId) {
+                return res.json({ success: false, message: 'Device ID mismatch. License is bound to another device.' });
+            }
         }
 
         // Validate activation key

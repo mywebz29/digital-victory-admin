@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
-    console.log('║   Digital Victory — Admin Panel          ║');
+    console.log('║   Digital Victory Advertisement — Admin Panel    ║');
     console.log('╠══════════════════════════════════════════╣');
     console.log(`║   🌐 http://localhost:${PORT}              ║`);
     console.log('║   👤 Admin: admin / admin123             ║');

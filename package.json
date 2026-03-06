@@ -1,7 +1,7 @@
 {
   "name": "digital-victory-admin",
   "version": "1.0.0",
-  "description": "Admin panel for Digital Victory app - User activation & license management",
+  "description": "Admin panel for Digital Victory Advertisement app - User activation & license management",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

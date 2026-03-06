@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const planSelect = document.getElementById('keyPlan');
     if (planSelect) {
         planSelect.addEventListener('change', () => {
-            const dur = { Basic: 30, Pro: 90, Premium: 365 };
+            const dur = { Demo: 2, Basic: 30, Pro: 90, Premium: 365 };
             document.getElementById('keyDuration').value = dur[planSelect.value] || 30;
         });
     }
@@ -80,6 +80,18 @@ async function loadDashboard() {
         if (!res.success) return;
         const s = res.stats;
 
+        // Cache dashboard for potential quick stats recovery
+        localStorage.setItem('dv_cache_dashboard', JSON.stringify(res.stats));
+
+        // Check for zero users + cached users -> Show Restore button
+        const cachedUsersStr = localStorage.getItem('dv_cache_users');
+        const rBtn = document.getElementById('restoreSection');
+        if (s.totalUsers === 0 && cachedUsersStr && JSON.parse(cachedUsersStr).length > 0 && rBtn) {
+            rBtn.classList.remove('hidden');
+        } else if (rBtn) {
+            rBtn.classList.add('hidden');
+        }
+
         document.getElementById('statsGrid').innerHTML = `
             <div class="stat-card">
                 <div class="stat-icon accent">👥</div>
@@ -133,6 +145,9 @@ async function loadUsers() {
     try {
         const res = await api('/api/users');
         if (!res.success) return;
+
+        // Cache users
+        localStorage.setItem('dv_cache_users', JSON.stringify(res.users));
 
         const tbody = document.getElementById('usersTable');
         if (res.users.length === 0) {
@@ -218,6 +233,9 @@ async function loadKeys() {
         const res = await api('/api/keys');
         if (!res.success) return;
 
+        // Cache keys
+        localStorage.setItem('dv_cache_keys', JSON.stringify(res.keys));
+
         const tbody = document.getElementById('keysTable');
         if (res.keys.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No keys generated yet</td></tr>';
@@ -297,6 +315,9 @@ async function loadLicenses() {
         const tbody = document.getElementById('licensesTable');
         const licensedUsers = usersRes.users.filter(u => u.license);
 
+        // Cache licenses
+        localStorage.setItem('dv_cache_licenses', JSON.stringify(licensedUsers.map(u => u.license)));
+
         if (licensedUsers.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No licenses yet</td></tr>';
         } else {
@@ -335,6 +356,32 @@ async function api(url, method = 'GET', body = null, auth = true) {
         throw new Error('Unauthorized');
     }
     return res.json();
+}
+
+async function restoreFromCache() {
+    if (!confirm('This will attempt to write your local browser data back to the server. Continue?')) return;
+
+    try {
+        const users = JSON.parse(localStorage.getItem('dv_cache_users') || '[]');
+        const keys = JSON.parse(localStorage.getItem('dv_cache_keys') || '[]');
+        const licenses = JSON.parse(localStorage.getItem('dv_cache_licenses') || '[]');
+
+        if (users.length === 0 && keys.length === 0) {
+            toast('No substantial data in local cache.', 'error');
+            return;
+        }
+
+        const res = await api('/api/auth/restore', 'POST', { users, keys, licenses });
+        if (res.success) {
+            toast('Data restored successfully! Refreshing...', 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            toast('Failed to restore: ' + res.message, 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        toast('Restore logic failed', 'error');
+    }
 }
 
 // ─── Utilities ──────────────────────────────────────────────────
