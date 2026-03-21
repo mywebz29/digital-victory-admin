@@ -52,6 +52,17 @@ const queries = {
                 .eq('id', id);
         }
     },
+    updateUserDeviceId: {
+        run: (id, device_id) => {
+            const d = loadData();
+            const user = d.users.find(u => u.id === id);
+            if (user) {
+                user.device_id = device_id;
+                user.updated_at = new Date().toISOString();
+                saveData(d);
+            }
+        }
+    },
     updateUserStatus: {
         run: async (is_active, id) => {
             await supabase.from('users')
@@ -345,6 +356,28 @@ const queries = {
     deleteBanner: {
         run: async (id) => {
             await supabase.from('banners').delete().eq('id', id);
+        }
+    },
+    restoreData: {
+        run: (usersCached, keysCached, licensesCached) => {
+            const d = loadData();
+
+            if (usersCached && usersCached.length > 0) {
+                // Strip out the injected .license property when restoring
+                d.users = usersCached.map(({ license, ...rest }) => rest);
+                d._counters.users = Math.max(0, ...d.users.map(u => u.id));
+            }
+            if (keysCached && keysCached.length > 0) {
+                // Strip out the injected .used_by_username property
+                d.activation_keys = keysCached.map(({ used_by_username, ...rest }) => rest);
+                d._counters.activation_keys = Math.max(0, ...d.activation_keys.map(k => k.id));
+            }
+            if (licensesCached && licensesCached.length > 0) {
+                // Strip out injected .username
+                d.licenses = licensesCached.map(({ username, ...rest }) => rest);
+                d._counters.licenses = Math.max(0, ...d.licenses.map(l => l.id));
+            }
+            saveData(d);
         }
     }
 };

@@ -22,6 +22,17 @@ router.post('/login', async (req, res) => {
             if (!user.is_active) {
                 return res.json({ success: false, message: 'Account deactivated. Contact support.' });
             }
+
+            // Verify or bind device ID
+            if (deviceId) {
+                if (!user.device_id) {
+                    // Bind device ID if none exists
+                    await queries.updateUserDeviceId.run(user.id, deviceId);
+                    user.device_id = deviceId;
+                } else if (user.device_id !== deviceId) {
+                    return res.json({ success: false, message: 'Device ID mismatch. License is bound to another device.' });
+                }
+            }
         } else {
             if (!activationKey) {
                 return res.json({ success: false, message: 'Activation key required for new registration' });
@@ -138,6 +149,17 @@ router.post('/renew', async (req, res) => {
         if (!user) return res.json({ success: false, message: 'User not found' });
         if (!bcrypt.compareSync(password, user.password_hash)) return res.json({ success: false, message: 'Invalid password' });
         if (!user.is_active) return res.json({ success: false, message: 'Account deactivated. Contact support.' });
+
+        const deviceId = req.body.deviceId;
+        if (deviceId) {
+            if (!user.device_id) {
+                // Bind device ID if none exists
+                await queries.updateUserDeviceId.run(user.id, deviceId);
+                user.device_id = deviceId;
+            } else if (user.device_id !== deviceId) {
+                return res.json({ success: false, message: 'Device ID mismatch. License is bound to another device.' });
+            }
+        }
 
         const key = await queries.getKeyByValue.get(activationKey);
         if (!key) return res.json({ success: false, message: 'Invalid activation key' });
