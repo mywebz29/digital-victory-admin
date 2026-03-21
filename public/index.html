@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Victory — Admin Panel</title>
+    <title>Promobot — Admin Panel</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- ─── Login Screen ────────────────────────────────────────── -->
+    <!-- ─── Login ────────────────────────────────────────── -->
     <div id="loginScreen" class="login-container">
         <div class="login-card">
-            <h1>⚡ Digital Victory</h1>
+            <h1>⚡ Promobot</h1>
             <p>Admin Panel — Sign in to manage users and licenses</p>
             <div class="form-group">
                 <label>Username</label>
@@ -30,12 +32,11 @@
         </div>
     </div>
 
-    <!-- ─── Dashboard (hidden initially) ────────────────────────── -->
+    <!-- ─── Dashboard ────────────────────────────────────── -->
     <div id="dashboardScreen" class="app hidden">
-        <!-- Sidebar -->
         <nav class="sidebar">
             <div class="sidebar-brand">
-                <h2>⚡ Digital Victory</h2>
+                <h2>⚡ Promobot</h2>
                 <small>Admin Panel</small>
             </div>
             <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
@@ -44,32 +45,39 @@
             <div class="nav-item" data-page="users" onclick="showPage('users')">
                 <span class="icon">👥</span> Users
             </div>
+            <div class="nav-item" data-page="plans" onclick="showPage('plans')">
+                <span class="icon">💎</span> Plans
+            </div>
             <div class="nav-item" data-page="keys" onclick="showPage('keys')">
-                <span class="icon">🔑</span> Activation Keys
+                <span class="icon">🔑</span> Keys
             </div>
             <div class="nav-item" data-page="licenses" onclick="showPage('licenses')">
                 <span class="icon">📄</span> Licenses
             </div>
+            <div class="nav-item" data-page="posters" onclick="showPage('posters')">
+                <span class="icon">🎨</span> Posters
+            </div>
+            <div class="nav-item" data-page="banners" onclick="showPage('banners')">
+                <span class="icon">🖼️</span> Banners
+            </div>
+            <div class="nav-item" data-page="minisites" onclick="showPage('minisites')">
+                <span class="icon">🌐</span> Mini Sites
+            </div>
             <div class="sidebar-footer">
-                <button class="btn btn-outline btn-sm" onclick="doLogout()" style="width:100%">
-                    🚪 Logout
-                </button>
+                <button class="btn btn-outline btn-sm" onclick="doLogout()" style="width:100%">🚪 Logout</button>
             </div>
         </nav>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- ─── Dashboard Page ──────────────────────────── -->
+            <!-- Dashboard Page -->
             <div id="page-dashboard">
                 <div class="page-header">
                     <div>
                         <h1>Dashboard</h1>
-                        <div class="subtitle">Overview of your Digital Victory platform</div>
+                        <div class="subtitle">Overview of your Promobot platform</div>
                     </div>
                 </div>
-                <div class="stats-grid" id="statsGrid">
-                    <!-- Populated by JS -->
-                </div>
+                <div class="stats-grid" id="statsGrid"></div>
                 <div class="card">
                     <div class="card-header">
                         <h3>Recent Activations</h3>
@@ -77,17 +85,24 @@
                     <div class="card-body">
                         <table>
                             <thead>
-                                <tr><th>User</th><th>Plan</th><th>Expiry</th><th>Status</th></tr>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Plan</th>
+                                    <th>Expiry</th>
+                                    <th>Status</th>
+                                </tr>
                             </thead>
                             <tbody id="recentTable">
-                                <tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Loading...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ─── Users Page ──────────────────────────────── -->
+            <!-- Users Page -->
             <div id="page-users" class="hidden">
                 <div class="page-header">
                     <div>
@@ -99,17 +114,86 @@
                     <div class="card-body">
                         <table>
                             <thead>
-                                <tr><th>ID</th><th>Username</th><th>Name</th><th>Mobile</th><th>Device ID</th><th>Plan</th><th>Expiry</th><th>Status</th><th>Registered</th><th>Actions</th></tr>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Name</th>
+                                    <th>Mobile</th>
+                                    <th>Plan</th>
+                                    <th>Expiry</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
                             </thead>
                             <tbody id="usersTable">
-                                <tr><td colspan="10" class="text-center text-muted">Loading...</td></tr>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">Loading...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ─── Keys Page ───────────────────────────────── -->
+            <!-- Plans Page -->
+            <div id="page-plans" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1>Plans & Features</h1>
+                        <div class="subtitle">Create plans with feature toggles</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="inline-form" id="planForm">
+                        <div class="form-group"><label>Plan Name</label><input type="text" id="planName"
+                                placeholder="e.g. Premium"></div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px; margin-top: -10px;">
+                            <button class="btn btn-sm btn-outline" onclick="fillPlan('Demo')">Demo</button>
+                            <button class="btn btn-sm btn-outline" onclick="fillPlan('Basic')">Basic</button>
+                            <button class="btn btn-sm btn-outline" onclick="fillPlan('Pro')">Pro</button>
+                            <button class="btn btn-sm btn-outline" onclick="fillPlan('Premium')">Premium</button>
+                        </div>
+                        <div class="form-group"><label>Duration (days)</label><input type="number" id="planDuration"
+                                value="30"></div>
+                        <div class="form-group"><label>Price (₹)</label><input type="number" id="planPrice" value="0">
+                        </div>
+                        <div class="form-group"><label>SMS/Day</label><input type="number" id="planSmsPd" value="100">
+                        </div>
+                        <div class="form-group"><label>WhatsApp/Day</label><input type="number" id="planWaPd"
+                                value="50"></div>
+                        <div class="feature-toggles">
+                            <label class="toggle-label"><input type="checkbox" id="feat_sms" checked> SMS</label>
+                            <label class="toggle-label"><input type="checkbox" id="feat_whatsapp"> WhatsApp</label>
+                            <label class="toggle-label"><input type="checkbox" id="feat_broadcast"> Broadcast</label>
+                            <label class="toggle-label"><input type="checkbox" id="feat_minisite"> MiniSite</label>
+                            <label class="toggle-label"><input type="checkbox" id="feat_posters"> Posters</label>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="savePlan()">💎 Save Plan</button>
+                    </div>
+                    <div class="card-body">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Days</th>
+                                    <th>Price</th>
+                                    <th>Features</th>
+                                    <th>Limits</th>
+                                    <th>Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="plansTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keys Page -->
             <div id="page-keys" class="hidden">
                 <div class="page-header">
                     <div>
@@ -119,46 +203,47 @@
                 </div>
                 <div class="card">
                     <div class="inline-form">
-                        <div class="form-group">
-                            <label>Count</label>
-                            <input type="number" id="keyCount" value="1" min="1" max="50">
-                        </div>
-                        <div class="form-group">
-                            <label>Plan</label>
-                            <select id="keyPlan">
-                                <option value="Basic">Basic (30 days)</option>
-                                <option value="Pro">Pro (90 days)</option>
-                                <option value="Premium">Premium (365 days)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Duration (days)</label>
-                            <input type="number" id="keyDuration" value="30" min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Assigned Name</label>
-                            <input type="text" id="keyUsername" placeholder="(Optional)">
-                        </div>
-                        <div class="form-group">
-                            <label>Assigned Mobile</label>
-                            <input type="text" id="keyMobile" placeholder="(Optional)">
-                        </div>
+                        <div class="form-group"><label>Count</label><input type="number" id="keyCount" value="1" min="1"
+                                max="50"></div>
+                        <div class="form-group"><label>Plan</label><select id="keyPlan">
+                                <option value="Demo">Demo</option>
+                                <option value="Basic">Basic</option>
+                                <option value="Pro">Pro</option>
+                                <option value="Premium">Premium</option>
+                            </select></div>
+                        <div class="form-group"><label>Duration (days)</label><input type="number" id="keyDuration"
+                                value="30" min="1"></div>
+                        <div class="form-group"><label>Assigned Name</label><input type="text" id="keyUsername"
+                                placeholder="(Optional)"></div>
+                        <div class="form-group"><label>Assigned Mobile</label><input type="text" id="keyMobile"
+                                placeholder="(Optional)"></div>
                         <button class="btn btn-primary btn-sm" onclick="generateKeys()">🔑 Generate</button>
                     </div>
                     <div class="card-body">
                         <table>
                             <thead>
-                                <tr><th>Key</th><th>Plan</th><th>Duration</th><th>Assigned To</th><th>Status</th><th>Used By</th><th>Created</th><th>Actions</th></tr>
+                                <tr>
+                                    <th>Key</th>
+                                    <th>Plan</th>
+                                    <th>Duration</th>
+                                    <th>Assigned To</th>
+                                    <th>Status</th>
+                                    <th>Used By</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
                             </thead>
                             <tbody id="keysTable">
-                                <tr><td colspan="8" class="text-center text-muted">Loading...</td></tr>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">Loading...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ─── Licenses Page ───────────────────────────── -->
+            <!-- Licenses Page -->
             <div id="page-licenses" class="hidden">
                 <div class="page-header">
                     <div>
@@ -170,10 +255,109 @@
                     <div class="card-body">
                         <table>
                             <thead>
-                                <tr><th>User</th><th>Plan</th><th>Token</th><th>Expiry</th><th>Payment</th><th>Status</th></tr>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Plan</th>
+                                    <th>Token</th>
+                                    <th>Expiry</th>
+                                    <th>Payment</th>
+                                    <th>Status</th>
+                                </tr>
                             </thead>
                             <tbody id="licensesTable">
-                                <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Posters Page -->
+            <div id="page-posters" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1>🎨 Poster Templates</h1>
+                        <div class="subtitle">Upload festive backgrounds for user creatives</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="inline-form" id="posterForm">
+                        <div class="form-group"><label>Name</label><input type="text" id="posterName"
+                                placeholder="e.g. Diwali 2026"></div>
+                        <div class="form-group"><label>Category</label>
+                            <select id="posterCategory">
+                                <option value="generic">Generic</option>
+                                <option value="diwali">Diwali</option>
+                                <option value="holi">Holi</option>
+                                <option value="christmas">Christmas</option>
+                                <option value="newyear">New Year</option>
+                                <option value="eid">Eid</option>
+                                <option value="independence">Independence Day</option>
+                                <option value="offer">Offer/Sale</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Background Image</label><input type="file" id="posterFile"
+                                accept="image/*"></div>
+                        <button class="btn btn-primary btn-sm" onclick="uploadPoster()">🎨 Upload</button>
+                    </div>
+                    <div class="poster-grid" id="posterGrid">
+                        <p class="text-muted text-center">Loading posters...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banners Page -->
+            <div id="page-banners" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1>🖼️ Banners</h1>
+                        <div class="subtitle">Upload promotional banners for app dashboard carousel</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="inline-form">
+                        <div class="form-group"><label>Title</label><input type="text" id="bannerTitle"
+                                placeholder="e.g. Google Reviews Promo"></div>
+                        <div class="form-group"><label>Link URL</label><input type="text" id="bannerLink"
+                                placeholder="(Optional) https://..."></div>
+                        <div class="form-group"><label>Image</label><input type="file" id="bannerFile" accept="image/*">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="uploadBanner()">🖼️ Upload</button>
+                    </div>
+                    <div class="poster-grid" id="bannerGrid">
+                        <p class="text-muted text-center" style="padding:24px">Loading banners...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini Sites Page -->
+            <div id="page-minisites" class="hidden">
+                <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h1>🌐 Mini Sites</h1>
+                        <div class="subtitle">All generated business websites</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openMinisiteCreate()">➕ Create New</button>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Slug</th>
+                                    <th>Business</th>
+                                    <th>Phone</th>
+                                    <th>WhatsApp</th>
+                                    <th>Created</th>
+                                    <th>Link</th>
+                                </tr>
+                            </thead>
+                            <tbody id="minisitesTable">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Loading...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -182,6 +366,126 @@
         </main>
     </div>
 
+    <!-- ─── Mini Site Edit Modal ──────────────────────────── -->
+    <div id="minisiteModal" class="modal hidden">
+        <div class="modal-content"
+            style="max-width:600px; width:90%; max-height:90vh; overflow-y:auto; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1C212B; padding: 24px; border-radius: 12px; border: 1px solid #30363D; z-index: 1000;">
+            <div class="flex justify-between"
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <h2 style="color:#FFF; font-size:20px; font-weight:600;"><span id="msModalTitle">Edit</span> Mini Site</h2>
+                <button onclick="closeMinisiteModal()"
+                    style="background:transparent; border:none; color:#8B949E; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="display:grid; gap: 16px;">
+                <input type="hidden" id="msOldSlug">
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>Custom URL Slug</label>
+                        <div style="display:flex; align-items:center; background:#0D1117; border:1px solid #30363D; border-radius:6px; overflow:hidden;">
+                            <span style="padding:8px 12px; background:#1C212B; color:#8B949E; border-right:1px solid #30363D; font-size:14px;">promo.mywebz.in/</span>
+                            <input type="text" id="msEditSlug" placeholder="e.g. sagar-tailor" style="border:none; border-radius:0; flex-grow:1; background:transparent;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Business Name</label>
+                        <input type="text" id="msEditName" placeholder="e.g. Sagar Tailor">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>Logo File (Optional)</label>
+                        <input type="file" id="msEditLogoFile" accept="image/*">
+                        <small style="color:#8B949E; font-size:12px;">Leave empty to keep current</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Hero Banner File (Optional)</label>
+                        <input type="file" id="msEditBannerFile" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tagline</label>
+                    <input type="text" id="msEditTagline">
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group"><label>Phone</label><input type="text" id="msEditPhone"></div>
+                    <div class="form-group"><label>WhatsApp</label><input type="text" id="msEditWa"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="msEditEmail"></div>
+                    <div class="form-group"><label>UPI ID</label><input type="text" id="msEditUpi"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="msEditAddress" rows="2"
+                        style="background:#0D1117; border:1px solid #30363D; color:#FFF; width:100%; padding:8px; border-radius:6px; font-family:inherit;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Google Maps / Review Link</label>
+                    <input type="text" id="msEditMaps">
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; justify-content:space-between; align-items:center;">
+                        Products / Catalog
+                        <button type="button" class="btn btn-sm" onclick="addMsProductRow()"
+                            style="background:#25D366; border:none; padding:4px 8px;">+ Add Product</button>
+                    </label>
+                    <div id="msProductsList" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                        <!-- Products will be injected here -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; justify-content:space-between; align-items:center;">
+                        Custom Links (Linktree Style)
+                        <button type="button" class="btn btn-sm" onclick="addMsCustomLinkRow()"
+                            style="background:#BB86FC; color:#0D1117; border:none; padding:4px 8px;">+ Add Link</button>
+                    </label>
+                    <div id="msCustomLinksList" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                        <!-- Custom links injected here -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; justify-content:space-between; align-items:center;">
+                        Image Gallery
+                        <div style="position:relative;">
+                            <input type="file" id="msGalleryUpload" multiple accept="image/*"
+                                style="opacity:0; position:absolute; inset:0; cursor:pointer;"
+                                onchange="handleGalleryUpload(this)">
+                            <button type="button" class="btn btn-sm"
+                                style="background:#4FC3F7; color:#0D1117; border:none; padding:4px 8px; pointer-events:none;">+
+                                Upload Images</button>
+                        </div>
+                    </label>
+                    <div id="msGalleryList"
+                        style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:8px; margin-top:8px;">
+                        <!-- Gallery images injected here -->
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:16px;">
+                    <label>Services Fallback (one per line, old format)</label>
+                    <textarea id="msEditServices" rows="3"
+                        style="background:#0D1117; border:1px solid #30363D; color:#FFF; width:100%; padding:8px; border-radius:6px; font-family:inherit;"></textarea>
+                </div>
+
+                <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
+                    <button class="btn btn-outline" onclick="closeMinisiteModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMinisiteEdits()" id="btnSaveMsEdit">💾 Save
+                        Changes</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop" onclick="closeMinisiteModal()"
+            style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:999;"></div>
+    </div>
+
     <script src="app.js"></script>
 </body>
+
 </html>

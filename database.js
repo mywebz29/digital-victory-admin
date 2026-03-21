@@ -1,214 +1,366 @@
-const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcryptjs');
+const { supabase } = require('./supabase');
 
-// ─── Data directory ─────────────────────────────────────────────
-// On Vercel: use /tmp (ephemeral but writable). Locally: use ./data
-const isVercel = process.env.VERCEL === '1';
-const dataDir = isVercel ? '/tmp' : path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+// ═══════════════════════════════════════════════════════════════
+// Supabase-backed query layer
+// Same API surface as the old JSON file DB for backward compatibility
+// ═══════════════════════════════════════════════════════════════
 
-const DB_PATH = path.join(dataDir, 'digitalvictory.json');
-
-// ─── Default data shape ────────────────────────────────────────
-const DEFAULT_DATA = {
-    admins: [],
-    users: [],
-    activation_keys: [],
-    licenses: [],
-    _counters: { admins: 0, users: 0, activation_keys: 0, licenses: 0 }
-};
-
-// ─── Load / Save ────────────────────────────────────────────────
-function loadData() {
-    try {
-        if (fs.existsSync(DB_PATH)) {
-            return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        }
-    } catch (e) {
-        console.error('DB read error, resetting:', e.message);
-    }
-    return JSON.parse(JSON.stringify(DEFAULT_DATA));
-}
-
-function saveData(data) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
-}
-
-function nextId(data, table) {
-    data._counters[table] = (data._counters[table] || 0) + 1;
-    return data._counters[table];
-}
-
-// ─── Seed default admin ─────────────────────────────────────────
-let data = loadData();
-if (data.admins.length === 0) {
-    const id = nextId(data, 'admins');
-    data.admins.push({
-        id,
-        username: 'admin',
-        password_hash: bcrypt.hashSync('admin123', 10),
-        created_at: new Date().toISOString()
-    });
-    saveData(data);
-    console.log('✓ Default admin created: admin / admin123');
-}
-
-// ─── Query API (mimics the prepared-statement style) ────────────
 const queries = {
-    // Admin
-    getAdminByUsername: { get: (username) => { const d = loadData(); return d.admins.find(a => a.username === username) || null; } },
 
-    // Users
-    getAllUsers: {
-        all: () => {
-            const d = loadData();
-            return d.users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .map(({ password_hash, ...rest }) => rest);
+    // ─── Admin ──────────────────────────────────────────────────
+    getAdminByUsername: {
+        get: async (username) => {
+            const { data } = await supabase.from('users').select('*').eq('username', username).single();
+            return data;
         }
     },
-    getUserById: { get: (id) => { const d = loadData(); return d.users.find(u => u.id === id) || null; } },
-    getUserByUsername: { get: (username) => { const d = loadData(); return d.users.find(u => u.username === username) || null; } },
+
+    // ─── Users ──────────────────────────────────────────────────
+    getAllUsers: {
+        all: async () => {
+            const { data } = await supabase.from('users')
+                .select('*').order('created_at', { ascending: false });
+            return (data || []).map(({ password_hash, ...rest }) => rest);
+        }
+    },
+    getUserById: {
+        get: async (id) => {
+            const { data } = await supabase.from('users').select('*').eq('id', id).single();
+            return data;
+        }
+    },
+    getUserByUsername: {
+        get: async (username) => {
+            const { data } = await supabase.from('users').select('*').eq('username', username).single();
+            return data;
+        }
+    },
     createUser: {
-        run: (username, password_hash, email, device_id, name, mobile) => {
-            const d = loadData();
-            const id = nextId(d, 'users');
-            const user = { id, username, password_hash, email, device_id, name: name || '', mobile: mobile || '', is_active: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-            d.users.push(user);
-            saveData(d);
-            return { lastInsertRowid: id };
+        run: async (username, password_hash, email, device_id, name, mobile) => {
+            const { data, error } = await supabase.from('users')
+                .insert({ username, password_hash, email, device_id, name: name || '', mobile: mobile || '' })
+                .select().single();
+            if (error) throw error;
+            return { lastInsertRowid: data.id, id: data.id };
         }
     },
     updateUser: {
-        run: (id, updates) => {
-            const d = loadData();
-            const user = d.users.find(u => u.id === id);
-            if (user) {
-                if (updates.name !== undefined) user.name = updates.name;
-                if (updates.mobile !== undefined) user.mobile = updates.mobile;
-                if (updates.email !== undefined) user.email = updates.email;
-                user.updated_at = new Date().toISOString();
-                saveData(d);
-            }
+        run: async (id, updates) => {
+            await supabase.from('users')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id);
         }
     },
     updateUserStatus: {
-        run: (is_active, id) => {
-            const d = loadData();
-            const user = d.users.find(u => u.id === id);
-            if (user) { user.is_active = is_active; user.updated_at = new Date().toISOString(); saveData(d); }
+        run: async (is_active, id) => {
+            await supabase.from('users')
+                .update({ is_active, updated_at: new Date().toISOString() })
+                .eq('id', id);
         }
     },
     deleteUser: {
-        run: (id) => {
-            const d = loadData();
-            d.users = d.users.filter(u => u.id !== id);
-            saveData(d);
+        run: async (id) => {
+            await supabase.from('users').delete().eq('id', id);
         }
     },
-    getUserCount: { get: () => { const d = loadData(); return { count: d.users.length }; } },
-    getActiveUserCount: { get: () => { const d = loadData(); return { count: d.users.filter(u => u.is_active).length }; } },
+    getUserCount: {
+        get: async () => {
+            const { count } = await supabase.from('users').select('*', { count: 'exact', head: true });
+            return { count: count || 0 };
+        }
+    },
+    getActiveUserCount: {
+        get: async () => {
+            const { count } = await supabase.from('users').select('*', { count: 'exact', head: true }).eq('is_active', true);
+            return { count: count || 0 };
+        }
+    },
 
-    // Activation Keys
+    // ─── Activation Keys ────────────────────────────────────────
     getAllKeys: {
-        all: () => {
-            const d = loadData();
-            return d.activation_keys.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .map(k => {
-                    const user = d.users.find(u => u.id === k.user_id);
-                    return { ...k, used_by_username: user ? user.username : null };
-                });
+        all: async () => {
+            const { data } = await supabase.from('activation_keys')
+                .select('*, users(username)')
+                .order('created_at', { ascending: false });
+            return (data || []).map(k => ({
+                ...k,
+                used_by_username: k.users?.username || null,
+                users: undefined
+            }));
         }
     },
-    getKeyByValue: { get: (key_value) => { const d = loadData(); return d.activation_keys.find(k => k.key_value === key_value) || null; } },
+    getKeyByValue: {
+        get: async (key_value) => {
+            const { data } = await supabase.from('activation_keys').select('*').eq('key_value', key_value).single();
+            return data;
+        }
+    },
     createKey: {
-        run: (key_value, plan_name, duration_days, assigned_username, assigned_mobile) => {
-            const d = loadData();
-            const id = nextId(d, 'activation_keys');
-            d.activation_keys.push({
-                id, key_value, user_id: null, plan_name, duration_days,
-                assigned_username: assigned_username || '',
-                assigned_mobile: assigned_mobile || '',
-                is_used: 0, is_revoked: 0, created_at: new Date().toISOString(), used_at: null
-            });
-            saveData(d);
-            return { lastInsertRowid: id };
+        run: async (key_value, plan_name, duration_days, assigned_username, assigned_mobile) => {
+            const { data, error } = await supabase.from('activation_keys')
+                .insert({ key_value, plan_name, duration_days, assigned_username: assigned_username || '', assigned_mobile: assigned_mobile || '' })
+                .select().single();
+            if (error) throw error;
+            return { lastInsertRowid: data.id };
         }
     },
     markKeyUsed: {
-        run: (user_id, key_id) => {
-            const d = loadData();
-            const key = d.activation_keys.find(k => k.id === key_id);
-            if (key) { key.is_used = 1; key.user_id = user_id; key.used_at = new Date().toISOString(); saveData(d); }
+        run: async (user_id, key_id) => {
+            await supabase.from('activation_keys')
+                .update({ is_used: true, user_id, used_at: new Date().toISOString() })
+                .eq('id', key_id);
         }
     },
     revokeKey: {
-        run: (id) => {
-            const d = loadData();
-            const key = d.activation_keys.find(k => k.id === id);
-            if (key) { key.is_revoked = 1; saveData(d); }
+        run: async (id) => {
+            await supabase.from('activation_keys').update({ is_revoked: true }).eq('id', id);
         }
     },
-    getUnusedKeyCount: { get: () => { const d = loadData(); return { count: d.activation_keys.filter(k => !k.is_used && !k.is_revoked).length }; } },
+    getUnusedKeyCount: {
+        get: async () => {
+            const { count } = await supabase.from('activation_keys')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_used', false).eq('is_revoked', false);
+            return { count: count || 0 };
+        }
+    },
 
-    // Licenses
+    // ─── Licenses ───────────────────────────────────────────────
     getAllLicenses: {
-        all: () => {
-            const d = loadData();
-            return d.licenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .map(l => {
-                    const user = d.users.find(u => u.id === l.user_id);
-                    return { ...l, username: user ? user.username : 'Unknown' };
-                });
+        all: async () => {
+            const { data } = await supabase.from('licenses')
+                .select('*, users(username)')
+                .order('created_at', { ascending: false });
+            return (data || []).map(l => ({
+                ...l,
+                username: l.users?.username || 'Unknown',
+                users: undefined
+            }));
         }
     },
     getLicenseByToken: {
-        get: (token) => {
-            const d = loadData();
-            const l = d.licenses.find(lic => lic.token === token);
-            if (!l) return null;
-            const user = d.users.find(u => u.id === l.user_id);
-            return { ...l, username: user ? user.username : 'Unknown' };
+        get: async (token) => {
+            const { data } = await supabase.from('licenses')
+                .select('*, users(username)')
+                .eq('token', token).single();
+            if (!data) return null;
+            return { ...data, username: data.users?.username || 'Unknown', users: undefined };
         }
     },
     getLicenseByUserId: {
-        get: (user_id) => {
-            const d = loadData();
-            return d.licenses
-                .filter(l => l.user_id === user_id && l.is_active)
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null;
+        get: async (user_id) => {
+            const { data } = await supabase.from('licenses')
+                .select('*')
+                .eq('user_id', user_id).eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1).single();
+            return data;
         }
     },
     createLicense: {
-        run: (user_id, key_id, token, expiry_date, plan_name, plan_amount, payment_status, support_mobile) => {
-            const d = loadData();
-            const id = nextId(d, 'licenses');
-            d.licenses.push({ id, user_id, key_id, token, expiry_date, plan_name, plan_amount, payment_status, support_mobile, is_active: 1, created_at: new Date().toISOString() });
-            saveData(d);
-            return { lastInsertRowid: id };
+        run: async (user_id, key_id, token, expiry_date, plan_name, plan_amount, payment_status, support_mobile) => {
+            const { data, error } = await supabase.from('licenses')
+                .insert({ user_id, key_id, token, expiry_date, plan_name, plan_amount, payment_status, support_mobile })
+                .select().single();
+            if (error) throw error;
+            return { lastInsertRowid: data.id };
         }
     },
     deactivateLicense: {
-        run: (id) => {
-            const d = loadData();
-            const l = d.licenses.find(lic => lic.id === id);
-            if (l) { l.is_active = 0; saveData(d); }
+        run: async (id) => {
+            await supabase.from('licenses').update({ is_active: false }).eq('id', id);
         }
     },
-    getActiveLicenseCount: { get: () => { const d = loadData(); return { count: d.licenses.filter(l => l.is_active && new Date(l.expiry_date) > new Date()).length }; } },
-    getExpiredLicenseCount: { get: () => { const d = loadData(); return { count: d.licenses.filter(l => new Date(l.expiry_date) <= new Date()).length }; } },
+    getActiveLicenseCount: {
+        get: async () => {
+            const { count } = await supabase.from('licenses')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_active', true).gt('expiry_date', new Date().toISOString());
+            return { count: count || 0 };
+        }
+    },
+    getExpiredLicenseCount: {
+        get: async () => {
+            const { count } = await supabase.from('licenses')
+                .select('*', { count: 'exact', head: true })
+                .lte('expiry_date', new Date().toISOString());
+            return { count: count || 0 };
+        }
+    },
     getRecentLicenses: {
-        all: () => {
-            const d = loadData();
-            return d.licenses
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 10)
-                .map(l => {
-                    const user = d.users.find(u => u.id === l.user_id);
-                    return { ...l, username: user ? user.username : 'Unknown' };
-                });
+        all: async () => {
+            const { data } = await supabase.from('licenses')
+                .select('*, users(username)')
+                .order('created_at', { ascending: false })
+                .limit(10);
+            return (data || []).map(l => ({
+                ...l,
+                username: l.users?.username || 'Unknown',
+                users: undefined
+            }));
+        }
+    },
+
+    // ─── Plans ──────────────────────────────────────────────────
+    getAllPlans: {
+        all: async () => {
+            const { data } = await supabase.from('plans').select('*').order('id');
+            return data || [];
+        }
+    },
+    getPlanByName: {
+        get: async (name) => {
+            const { data } = await supabase.from('plans').select('*').eq('name', name).single();
+            return data;
+        }
+    },
+    createPlan: {
+        run: async (planData) => {
+            const { data, error } = await supabase.from('plans').insert(planData).select().single();
+            if (error) throw error;
+            return data;
+        }
+    },
+    updatePlan: {
+        run: async (id, updates) => {
+            await supabase.from('plans').update(updates).eq('id', id);
+        }
+    },
+    deletePlan: {
+        run: async (id) => {
+            await supabase.from('plans').delete().eq('id', id);
+        }
+    },
+
+    // ─── Mini Sites ─────────────────────────────────────────────
+    upsertMiniSite: {
+        run: async (oldSlug, newSlug, siteData) => {
+            // If we're updating a specific old slug, check if it exists
+            if (oldSlug) {
+                const { data: existing } = await supabase.from('mini_sites').select('id').eq('slug', oldSlug).single();
+                if (existing) {
+                    await supabase.from('mini_sites')
+                        .update({ ...siteData, slug: newSlug, updated_at: new Date().toISOString() })
+                        .eq('id', existing.id);
+                    return { id: existing.id, slug: newSlug };
+                }
+            }
+            
+            // Otherwise, it’s either a new site or oldSlug wasn't found (fallback to upsert by slug)
+            const { data: existingByNewSlug } = await supabase.from('mini_sites').select('id').eq('slug', newSlug).single();
+            if (existingByNewSlug) {
+                await supabase.from('mini_sites')
+                    .update({ ...siteData, updated_at: new Date().toISOString() })
+                    .eq('slug', newSlug);
+                return { id: existingByNewSlug.id, slug: newSlug };
+            } else {
+                const { data, error } = await supabase.from('mini_sites')
+                    .insert({ slug: newSlug, ...siteData }).select().single();
+                if (error) throw error;
+                return { lastInsertRowid: data.id, slug: newSlug };
+            }
+        }
+    },
+    getMiniSiteBySlug: {
+        get: async (slug) => {
+            const { data } = await supabase.from('mini_sites').select('*').eq('slug', slug).single();
+            return data;
+        }
+    },
+    getAllMiniSites: {
+        all: async () => {
+            const { data } = await supabase.from('mini_sites').select('*').order('created_at', { ascending: false });
+            return data || [];
+        }
+    },
+
+    // ─── Poster Templates ───────────────────────────────────────
+    getAllPosters: {
+        all: async () => {
+            const { data } = await supabase.from('poster_templates')
+                .select('*').order('sort_order').order('created_at', { ascending: false });
+            return data || [];
+        }
+    },
+    getActivePosters: {
+        all: async () => {
+            const { data } = await supabase.from('poster_templates')
+                .select('*').eq('is_active', true).order('sort_order');
+            return data || [];
+        }
+    },
+    getPostersByCategory: {
+        all: async (category) => {
+            const { data } = await supabase.from('poster_templates')
+                .select('*').eq('category', category).eq('is_active', true).order('sort_order');
+            return data || [];
+        }
+    },
+    createPoster: {
+        run: async (posterData) => {
+            const { data, error } = await supabase.from('poster_templates').insert(posterData).select().single();
+            if (error) throw error;
+            return data;
+        }
+    },
+    updatePoster: {
+        run: async (id, updates) => {
+            await supabase.from('poster_templates').update(updates).eq('id', id);
+        }
+    },
+    deletePoster: {
+        run: async (id) => {
+            await supabase.from('poster_templates').delete().eq('id', id);
+        }
+    },
+
+    // ─── Banners ────────────────────────────────────────────────
+    getAllBanners: {
+        all: async () => {
+            const { data } = await supabase.from('banners')
+                .select('*').order('sort_order').order('created_at', { ascending: false });
+            return data || [];
+        }
+    },
+    getActiveBanners: {
+        all: async () => {
+            const { data } = await supabase.from('banners')
+                .select('*').eq('is_active', true).order('sort_order');
+            return data || [];
+        }
+    },
+    createBanner: {
+        run: async (bannerData) => {
+            const { data, error } = await supabase.from('banners').insert(bannerData).select().single();
+            if (error) throw error;
+            return data;
+        }
+    },
+    updateBanner: {
+        run: async (id, updates) => {
+            await supabase.from('banners').update(updates).eq('id', id);
+        }
+    },
+    deleteBanner: {
+        run: async (id) => {
+            await supabase.from('banners').delete().eq('id', id);
         }
     }
 };
 
-module.exports = { queries };
+// ─── Seed admin user (if none exists) ───────────────────────────
+(async () => {
+    try {
+        const { count } = await supabase.from('users').select('*', { count: 'exact', head: true }).eq('username', 'admin');
+        if (count === 0) {
+            const hash = bcrypt.hashSync('M112233M', 10);
+            await supabase.from('users').insert({ username: 'admin', password_hash: hash, name: 'Admin', is_active: true });
+            console.log('✓ Default admin seeded: admin / M112233M');
+        }
+    } catch (e) {
+        console.warn('Admin seed skipped (Supabase may not be configured yet):', e.message);
+    }
+})();
+
+module.exports = { queries, supabase };
